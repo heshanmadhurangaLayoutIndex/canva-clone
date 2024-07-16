@@ -7,10 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ResponseType } from "@/features/projects/api/use-get-project";
 import { useUpdateProject } from "@/features/projects/api/use-update-project";
 
-import { 
-  ActiveTool, 
-  selectionDependentTools
-} from "@/features/editor/types";
+import { ActiveTool, selectionDependentTools } from "@/features/editor/types";
 import { Navbar } from "@/features/editor/components/navbar";
 import { Footer } from "@/features/editor/components/footer";
 import { useEditor } from "@/features/editor/hooks/use-editor";
@@ -30,67 +27,72 @@ import { AiSidebar } from "@/features/editor/components/ai-sidebar";
 import { TemplateSidebar } from "@/features/editor/components/template-sidebar";
 import { RemoveBgSidebar } from "@/features/editor/components/remove-bg-sidebar";
 import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
+import { ButtonIcon } from "@/components/ui/icon-button";
 
 interface EditorProps {
   initialData: ResponseType["data"];
-};
+}
 
 export const Editor = ({ initialData }: EditorProps) => {
   const { mutate } = useUpdateProject(initialData.id);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSave = useCallback(
-    debounce(
-      (values: { 
-        json: string,
-        height: number,
-        width: number,
-      }) => {
-        mutate(values);
-    },
-    500
-  ), [mutate]);
+    debounce((values: { json: string; height: number; width: number }) => {
+      // mutate(values);
+    }, 500),
+    [mutate]
+  );
 
   const [activeTool, setActiveTool] = useState<ActiveTool>("select");
+  const [frames, setFrames] = useState<number[]>([1]);
+  const [activeCanvas, setActiveCanvas] = useState<number>(1);
 
   const onClearSelection = useCallback(() => {
     if (selectionDependentTools.includes(activeTool)) {
       setActiveTool("select");
     }
-  }, [activeTool]);
+  }, [activeTool, activeCanvas]);
 
-  const { init, editor } = useEditor({
-    defaultState: initialData.json,
-    defaultWidth: initialData.width,
-    defaultHeight: initialData.height,
-    clearSelectionCallback: onClearSelection,
-    saveCallback: debouncedSave,
-  });
+  const { init, editor, setNewCanvas, canvasDataList, changeActiveCanvas } =
+    useEditor({
+      // defaultState: initialData.json,
+      defaultWidth: initialData.width,
+      defaultHeight: initialData.height,
+      clearSelectionCallback: onClearSelection,
+      saveCallback: debouncedSave,
+    });
 
-  const onChangeActiveTool = useCallback((tool: ActiveTool) => {
-    if (tool === "draw") {
-      editor?.enableDrawingMode();
-    }
+  const onChangeActiveTool = useCallback(
+    (tool: ActiveTool) => {
+      if (tool === "draw") {
+        editor?.enableDrawingMode();
+      }
 
-    if (activeTool === "draw") {
-      editor?.disableDrawingMode();
-    }
+      if (activeTool === "draw") {
+        editor?.disableDrawingMode();
+      }
 
-    if (tool === activeTool) {
-      return setActiveTool("select");
-    }
-    
-    setActiveTool(tool);
-  }, [activeTool, editor]);
+      if (tool === activeTool) {
+        return setActiveTool("select");
+      }
 
-  const canvasRef = useRef(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+      setActiveTool(tool);
+    },
+    [activeTool, editor]
+  );
+
+  const canvasRef = useRef<any>(null);
+  const containerRef = useRef<any>(null);
 
   useEffect(() => {
     const canvas = new fabric.Canvas(canvasRef.current, {
       controlsAboveOverlay: true,
       preserveObjectStacking: true,
     });
+
+    canvasRef.current = document.getElementById(`canvas-${frames.length}`);
+    containerRef.current! = document.getElementById(`frame-${frames.length}`);
 
     init({
       initialCanvas: canvas,
@@ -100,8 +102,28 @@ export const Editor = ({ initialData }: EditorProps) => {
     return () => {
       canvas.dispose();
     };
-  }, [init]);
+  }, []);
 
+  const addFrame = () => {
+    canvasRef.current = document.getElementById(`canvas-${frames.length}`);
+    containerRef.current! = document.getElementById(`frame-${frames.length}`);
+
+    const canvas = new fabric.Canvas(canvasRef.current, {
+      controlsAboveOverlay: true,
+      preserveObjectStacking: true,
+    });
+    setActiveCanvas(frames.length);
+    setNewCanvas({
+      initialCanvas: canvas,
+      initialContainer: containerRef.current!,
+    });
+  };
+
+  useEffect(() => {
+    if (frames.length > 1) {
+      addFrame();
+    }
+  }, [frames]);
   return (
     <div className="h-full flex flex-col">
       <Navbar
@@ -192,8 +214,52 @@ export const Editor = ({ initialData }: EditorProps) => {
             onChangeActiveTool={onChangeActiveTool}
             key={JSON.stringify(editor?.canvas.getActiveObject())}
           />
-          <div className="flex-1 h-[calc(100%-124px)] bg-muted" ref={containerRef}>
-            <canvas ref={canvasRef} />
+          <div className="flex flex-row justify-end ">
+            <button
+              onClick={() => {
+                setFrames((prev: any) => [...prev, prev.length + 1]);
+                onChangeActiveTool("select");
+                // addFrame();
+              }}
+            >
+              <ButtonIcon />
+              Add Another Frame
+            </button>
+          </div>
+          {/* <div className="flex-1 h-[calc(100%-124px)] bg-muted" id={`frame-0`}>
+            <canvas id={`canvas-0`} />
+          </div> */}
+          {frames?.map((frame) => (
+            <div
+              className={`flex-1 h-[calc(100%-124px)] bg-muted ${
+                activeCanvas === frame ? "block" : "hidden"
+              }`}
+              id={`frame-${frame}`}
+            >
+              <canvas id={`canvas-${frame}`} />
+            </div>
+          ))}
+
+          <div className="timeline">
+            <div className="flex flex-row">
+              {canvasDataList?.map((frame, index) => (
+                <div
+                  onClick={() => {
+                    changeActiveCanvas(frame.id);
+
+                    setActiveCanvas(index + 1);
+                  }}
+                >
+                  <button key={index}>Frame {index + 1}</button>
+                  {/* <img
+                    className="w-36 h-36"
+                    src={canvasDataList
+                      .find((data) => data.id === frame.id)
+                      ?.canvas?.toDataURL()}
+                  /> */}
+                </div>
+              ))}
+            </div>
           </div>
           <Footer editor={editor} />
         </main>
