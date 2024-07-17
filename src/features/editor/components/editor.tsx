@@ -28,6 +28,7 @@ import { TemplateSidebar } from "@/features/editor/components/template-sidebar";
 import { RemoveBgSidebar } from "@/features/editor/components/remove-bg-sidebar";
 import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
 import { ButtonIcon } from "@/components/ui/icon-button";
+import PreviewImage from "./preview-image";
 
 interface EditorProps {
   initialData: ResponseType["data"];
@@ -251,12 +252,11 @@ export const Editor = ({ initialData }: EditorProps) => {
                   }}
                 >
                   <button key={index}>Frame {index + 1}</button>
-                  {/* <img
-                    className="w-36 h-36"
-                    src={canvasDataList
-                      .find((data) => data.id === frame.id)
-                      ?.canvas?.toDataURL()}
-                  /> */}
+                  <PreviewImage
+                    canvasDataList={canvasDataList}
+                    activeCanvas={activeCanvas}
+                    index={index}
+                  />
                 </div>
               ))}
             </div>
