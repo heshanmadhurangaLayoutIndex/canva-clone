@@ -807,8 +807,7 @@ export const useEditor = ({
           blur: 5,
         }),
       });
-      // if (!canvas) return;
-      // canvas.discardActiveObject();
+
       initialCanvas.setWidth(initialContainer.offsetWidth);
       initialCanvas.setHeight(initialContainer.offsetHeight);
       initialCanvas.add(initialWorkspace);
@@ -837,25 +836,11 @@ export const useEditor = ({
   );
 
   const changeActiveCanvas = (id: number) => {
-    console.log("canvasHistory id", id);
     const canvasData = canvasDataList.find((data) => data.id === id);
     if (!canvasData) {
       return;
     }
-
-    // canvas?.discardActiveObject();
-    // fabric.Object.prototype.set({
-    //   cornerColor: "#FFF",
-    //   cornerStyle: "circle",
-    //   borderColor: "#3b82f6",
-    //   borderScaleFactor: 1.5,
-    //   transparentCorners: false,
-    //   borderOpacityWhenMoving: 1,
-    //   cornerStrokeColor: "#3b82f6",
-    // });
-
     const json = canvasData.canvas.toJSON(JSON_KEYS);
-
     canvasData.canvas.loadFromJSON(json, () => {
       canvasData.canvas.renderAll();
     });

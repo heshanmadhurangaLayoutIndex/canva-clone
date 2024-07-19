@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 type PreviewImageProps = {
   canvasDataList: any[];
   activeCanvas: number;
@@ -18,9 +18,14 @@ const PreviewImage = ({
 
   return (
     <>
-      <img key={index} className="w-full h-20" src={preview} />
+      <img
+        key={index}
+        className="w-full h-20 object-cover repeat-infinite"
+        src={preview}
+        draggable={false}
+      />
     </>
   );
 };
 
-export default PreviewImage;
+export default memo(PreviewImage);

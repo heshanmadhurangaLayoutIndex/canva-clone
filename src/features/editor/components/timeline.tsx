@@ -6,7 +6,7 @@ import PreviewImage from "./preview-image";
 type TimelineProps = {
   canvases: CanvasData[];
   onCanvasChange: (canvasId: number) => void;
-  frames: number[];
+  activeCanvas: number;
 };
 
 type Segment = {
@@ -18,15 +18,13 @@ type Segment = {
   frameId: number;
 };
 
-const Timeline = ({ canvases, onCanvasChange }: TimelineProps) => {
-  const [activeDragCanvas, setActiveDragCanvas] = useState<number>(1);
-  const [segments, setSegments] = useState<Segment[]>([
-    // { id: 1, time: 100, position: 0, gap: 10 ,canvas:},
-    // { id: 2, time: 150, position: 210, gap: 10 },
-    // { id: 3, time: 200, position: 420, gap: 10 },
-    // { id: 4, time: 250, position: 640, gap: 10 },
-    // { id: 5, time: 300, position: 900, gap: 10 },
-  ]);
+const Timeline = ({
+  canvases,
+  onCanvasChange,
+  activeCanvas,
+}: TimelineProps) => {
+  const [activeDragCanvas, setActiveDragCanvas] = useState<number | null>(null);
+  const [segments, setSegments] = useState<Segment[]>([]);
 
   const handleDragStop = useCallback(
     (d: DraggableData, segmentId: number) => {
@@ -130,16 +128,21 @@ const Timeline = ({ canvases, onCanvasChange }: TimelineProps) => {
   }, [canvases]);
 
   return (
-    <div className="relative w-full h-[6.15rem] overflow-x-auto bg-gray-200 overflow-y-hidden ">
+    <div className="relative w-full h-[6.65rem] overflow-x-auto bg-gray-200 overflow-y-hidden flex items-center ">
       {segments.map((segment, index) => (
         <Rnd
           key={segment.id}
           size={{ width: segment.time * 2, height: "6rem" }}
+          className="flex items-center "
           position={{ x: segment.position, y: 0 }}
-          onDragStop={(e, d) => handleDragStop(d, segment.id)}
-          onResizeStop={(e, direction, ref, delta, position) =>
-            handleResizeStop(ref, segment.id)
-          }
+          onDragStop={(e, d) => {
+            handleDragStop(d, segment.id);
+            setActiveDragCanvas(null);
+          }}
+          onResizeStop={(e, direction, ref, delta, position) => {
+            handleResizeStop(ref, segment.id);
+          }}
+          onDragStart={() => setActiveDragCanvas(segment.id)}
           enableResizing={{
             top: false,
             right: true,
@@ -155,20 +158,21 @@ const Timeline = ({ canvases, onCanvasChange }: TimelineProps) => {
             handleResize(ref, segment.id)
           }
           dragAxis="x"
-          bounds="parent"
+          // bounds="parent"
         >
           <div
-            className="border border-blue-500 rounded-lg"
+            className={`${
+              segment.id === activeDragCanvas ? "border-4" : "border"
+            }  rounded-lg border-blue-500`}
             onClick={() => {
               onCanvasChange(segment.canvas.id);
-              // setActiveCanvas(index + 1);
+              setActiveDragCanvas(null);
             }}
           >
-            <img
-              key={index}
-              className="w-full h-24"
-              draggable="false"
-              src={segment.canvas.canvas.toDataURL()}
+            <PreviewImage
+              canvasDataList={canvases}
+              index={segment.canvas.id - 1}
+              activeCanvas={activeCanvas}
             />
           </div>
           <div

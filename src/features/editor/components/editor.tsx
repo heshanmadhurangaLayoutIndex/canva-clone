@@ -3,10 +3,8 @@
 import { fabric } from "fabric";
 import debounce from "lodash.debounce";
 import { useCallback, useEffect, useRef, useState } from "react";
-
 import { ResponseType } from "@/features/projects/api/use-get-project";
 import { useUpdateProject } from "@/features/projects/api/use-update-project";
-
 import { ActiveTool, selectionDependentTools } from "@/features/editor/types";
 import { Navbar } from "@/features/editor/components/navbar";
 import { Footer } from "@/features/editor/components/footer";
@@ -28,7 +26,6 @@ import { TemplateSidebar } from "@/features/editor/components/template-sidebar";
 import { RemoveBgSidebar } from "@/features/editor/components/remove-bg-sidebar";
 import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
 import { ButtonIcon } from "@/components/ui/icon-button";
-import PreviewImage from "./preview-image";
 import Timeline from "./timeline";
 
 interface EditorProps {
@@ -217,12 +214,12 @@ export const Editor = ({ initialData }: EditorProps) => {
             key={JSON.stringify(editor?.canvas.getActiveObject())}
           />
           <div className="flex flex-row justify-end ">
-            <ButtonIcon
-              onClick={() => {
+            <Footer
+              editor={editor}
+              addFrame={() => {
                 setFrames((prev: any) => [...prev, prev.length + 1]);
                 onChangeActiveTool("select");
               }}
-              title="Add  Frame"
             />
           </div>
           {frames?.map((frame) => (
@@ -238,34 +235,13 @@ export const Editor = ({ initialData }: EditorProps) => {
           <div className="flex flex-row">
             <Timeline
               canvases={canvasDataList}
-              frames={frames}
+              activeCanvas={activeCanvas}
               onCanvasChange={(canvasId) => {
                 changeActiveCanvas(canvasId);
                 setActiveCanvas(canvasId);
               }}
             />
           </div>
-          {/* <div className="timeline">
-            <div className="flex flex-row">
-              {canvasDataList?.map((frame, index) => (
-                <div
-                  onClick={() => {
-                    changeActiveCanvas(frame.id);
-
-                    setActiveCanvas(index + 1);
-                  }}
-                >
-                  <button key={index}>Frame {index + 1}</button>
-                  <PreviewImage
-                    canvasDataList={canvasDataList}
-                    activeCanvas={activeCanvas}
-                    index={index}
-                  />
-                </div>
-              ))}
-            </div>
-          </div> */}
-          <Footer editor={editor} />
         </main>
       </div>
     </div>
