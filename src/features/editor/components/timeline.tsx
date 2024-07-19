@@ -1,0 +1,192 @@
+import React, { useCallback, useEffect, useState } from "react";
+import { DraggableData, Rnd } from "react-rnd";
+import { CanvasData } from "../types";
+import PreviewImage from "./preview-image";
+
+type TimelineProps = {
+  canvases: CanvasData[];
+  onCanvasChange: (canvasId: number) => void;
+  frames: number[];
+};
+
+type Segment = {
+  id: number;
+  time: number;
+  position: number;
+  gap: number;
+  canvas: CanvasData;
+  frameId: number;
+};
+
+const Timeline = ({ canvases, onCanvasChange }: TimelineProps) => {
+  const [activeDragCanvas, setActiveDragCanvas] = useState<number>(1);
+  const [segments, setSegments] = useState<Segment[]>([
+    // { id: 1, time: 100, position: 0, gap: 10 ,canvas:},
+    // { id: 2, time: 150, position: 210, gap: 10 },
+    // { id: 3, time: 200, position: 420, gap: 10 },
+    // { id: 4, time: 250, position: 640, gap: 10 },
+    // { id: 5, time: 300, position: 900, gap: 10 },
+  ]);
+
+  const handleDragStop = useCallback(
+    (d: DraggableData, segmentId: number) => {
+      const segmentIndex = segments.findIndex((seg) => seg.id === segmentId);
+      if (segmentIndex !== -1) {
+        const updatedSegments = [...segments];
+        const movedSegment = updatedSegments.splice(segmentIndex, 1)[0];
+        movedSegment.position = Math.max(d.x, 0);
+
+        let newIndex = 0;
+        while (
+          newIndex < updatedSegments.length &&
+          updatedSegments[newIndex].position < movedSegment.position
+        ) {
+          newIndex++;
+        }
+
+        updatedSegments.splice(newIndex, 0, movedSegment);
+
+        let currentPosition = 0;
+        for (let i = 0; i < updatedSegments.length; i++) {
+          updatedSegments[i].position = currentPosition;
+          currentPosition +=
+            updatedSegments[i].time * 2 + updatedSegments[i].gap;
+        }
+
+        setSegments(updatedSegments);
+      }
+    },
+    [segments]
+  );
+
+  const handleResizeStop = useCallback(
+    (ref: HTMLElement, segmentId: number) => {
+      const segmentIndex = segments.findIndex((seg) => seg.id === segmentId);
+      if (segmentIndex !== -1) {
+        const updatedSegments = [...segments];
+        const newWidth = parseFloat(ref.style.width.replace("px", ""));
+        updatedSegments[segmentIndex].time = newWidth / 2; // 2px per second
+
+        let currentPosition = 0;
+        for (let i = 0; i < updatedSegments.length; i++) {
+          updatedSegments[i].position = currentPosition;
+          currentPosition +=
+            updatedSegments[i].time * 2 + updatedSegments[i].gap;
+        }
+
+        setSegments(updatedSegments);
+      }
+    },
+    [segments]
+  );
+
+  const handleResize = useCallback(
+    (ref: HTMLElement, segmentId: number) => {
+      const segmentIndex = segments.findIndex((seg) => seg.id === segmentId);
+      if (segmentIndex !== -1) {
+        const updatedSegments = [...segments];
+        const newWidth = parseFloat(ref.style.width.replace("px", ""));
+        updatedSegments[segmentIndex].time = newWidth / 2; // 2px per second
+
+        setSegments(updatedSegments);
+      }
+    },
+    [segments]
+  );
+
+  const handleAddSegment = (canvas: CanvasData) => {
+    if (segments.length === 0) {
+      const newSegment: Segment = {
+        id: 1,
+        time: 100,
+        position: 0,
+        gap: 10,
+        canvas: canvas,
+        frameId: canvas.id,
+      };
+      return setSegments([newSegment]);
+    }
+    const lastSegment = segments[segments.length - 1];
+    const newPosition =
+      lastSegment.position + lastSegment.time * 2 + lastSegment.gap;
+    const newSegment: Segment = {
+      id: segments.length + 1,
+      time: 100,
+      position: newPosition,
+      gap: 10,
+      canvas: canvas,
+      frameId: canvas.id,
+    };
+    setSegments([...segments, newSegment]);
+  };
+
+  useEffect(() => {
+    for (let canvas of canvases) {
+      const segment = segments.find((seg) => seg.canvas.id === canvas.id);
+      if (!segment) {
+        handleAddSegment(canvas);
+      }
+    }
+  }, [canvases]);
+
+  return (
+    <div className="relative w-full h-[6.15rem] overflow-x-auto bg-gray-200 overflow-y-hidden ">
+      {segments.map((segment, index) => (
+        <Rnd
+          key={segment.id}
+          size={{ width: segment.time * 2, height: "6rem" }}
+          position={{ x: segment.position, y: 0 }}
+          onDragStop={(e, d) => handleDragStop(d, segment.id)}
+          onResizeStop={(e, direction, ref, delta, position) =>
+            handleResizeStop(ref, segment.id)
+          }
+          enableResizing={{
+            top: false,
+            right: true,
+            bottom: false,
+            left: true,
+            topRight: false,
+            bottomRight: false,
+            bottomLeft: false,
+            topLeft: false,
+          }}
+          d
+          onResize={(e, direction, ref, delta, position) =>
+            handleResize(ref, segment.id)
+          }
+          dragAxis="x"
+          bounds="parent"
+        >
+          <div
+            className="border border-blue-500 rounded-lg"
+            onClick={() => {
+              onCanvasChange(segment.canvas.id);
+              // setActiveCanvas(index + 1);
+            }}
+          >
+            <img
+              key={index}
+              className="w-full h-24"
+              draggable="false"
+              src={segment.canvas.canvas.toDataURL()}
+            />
+          </div>
+          <div
+            className=" text-right  bg-gray-800 bg-opacity-25 rounded-sm p-1"
+            style={{
+              top: "10px",
+              right: "10px",
+              position: "absolute",
+            }}
+          >
+            <span className="text-white text-xs font-bold">
+              {segment.time.toFixed(2)}s
+            </span>
+          </div>
+        </Rnd>
+      ))}
+    </div>
+  );
+};
+
+export default Timeline;

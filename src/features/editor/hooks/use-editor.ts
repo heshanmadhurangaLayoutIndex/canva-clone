@@ -531,6 +531,7 @@ const buildEditor = ({
           strokeDashArray: strokeDashArray,
         }
       );
+
       addToCanvas(object);
     },
     canvas,

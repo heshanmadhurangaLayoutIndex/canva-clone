@@ -29,6 +29,7 @@ import { RemoveBgSidebar } from "@/features/editor/components/remove-bg-sidebar"
 import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
 import { ButtonIcon } from "@/components/ui/icon-button";
 import PreviewImage from "./preview-image";
+import Timeline from "./timeline";
 
 interface EditorProps {
   initialData: ResponseType["data"];
@@ -216,20 +217,14 @@ export const Editor = ({ initialData }: EditorProps) => {
             key={JSON.stringify(editor?.canvas.getActiveObject())}
           />
           <div className="flex flex-row justify-end ">
-            <button
+            <ButtonIcon
               onClick={() => {
                 setFrames((prev: any) => [...prev, prev.length + 1]);
                 onChangeActiveTool("select");
-                // addFrame();
               }}
-            >
-              <ButtonIcon />
-              Add Another Frame
-            </button>
+              title="Add  Frame"
+            />
           </div>
-          {/* <div className="flex-1 h-[calc(100%-124px)] bg-muted" id={`frame-0`}>
-            <canvas id={`canvas-0`} />
-          </div> */}
           {frames?.map((frame) => (
             <div
               className={`flex-1 h-[calc(100%-124px)] bg-muted ${
@@ -240,8 +235,17 @@ export const Editor = ({ initialData }: EditorProps) => {
               <canvas id={`canvas-${frame}`} />
             </div>
           ))}
-
-          <div className="timeline">
+          <div className="flex flex-row">
+            <Timeline
+              canvases={canvasDataList}
+              frames={frames}
+              onCanvasChange={(canvasId) => {
+                changeActiveCanvas(canvasId);
+                setActiveCanvas(canvasId);
+              }}
+            />
+          </div>
+          {/* <div className="timeline">
             <div className="flex flex-row">
               {canvasDataList?.map((frame, index) => (
                 <div
@@ -260,7 +264,7 @@ export const Editor = ({ initialData }: EditorProps) => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
           <Footer editor={editor} />
         </main>
       </div>
